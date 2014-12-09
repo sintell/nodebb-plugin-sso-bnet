@@ -40,10 +40,12 @@
 			oauth2: {
 				authorizationURL: 'https://us.battle.net/oauth/authorize',
 				tokenURL: 'https://us.battle.net/oauth/token',
-				clientID: '',
-				clientSecret: ''
+				clientID: process.env.BNET_ID,
+				clientSecret: process.env.BNET_SECRET
 			},
-			userRoute: 'https://us.api.battle.net/account/id'	// This is the address to your app's "user profile" API endpoint (expects JSON)
+			userRoutes: ['https://us.api.battle.net/account/user/id',
+			             'https://us.api.battle.net/account/user/battletag',
+		                     'https://us.api.battle.net/wow/user/characters'] // This is the address to your app's "user profile" API endpoint (expects JSON)
 		}),
 		configOk = false,
 		OAuth = {}, passportOAuth, opts;
