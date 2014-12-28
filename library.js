@@ -57,8 +57,6 @@
 		winston.error('[sso-oauth] Please specify a name for your OAuth provider (library.js:32)');
 	} else if (!constants.type || (constants.type !== 'oauth' && constants.type !== 'oauth2')) {
 		winston.error('[sso-oauth] Please specify an OAuth strategy to utilise (library.js:31)');
-	} else if (!constants.userRoute) {
-		winston.error('[sso-oauth] User Route required (library.js:31)');
 	} else {
 		configOk = true;
 	}
