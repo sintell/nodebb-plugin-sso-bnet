@@ -1,7 +1,7 @@
 {
   "name": "nodebb-plugin-sso-bnet",
-  "version": "0.1.0",
-  "description": "NodeBB BNet OAuth SSO",
+  "version": "0.1.1",
+  "description": "NodeBB Battle.net SSO",
   "main": "library.js",
   "repository": {
     "type": "git",
