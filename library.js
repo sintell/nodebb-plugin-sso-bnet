@@ -28,8 +28,8 @@
 		async = module.parent.require('async'),
 
 		constants = Object.freeze({
-			type: 'oauth2',	// Either 'oauth' or 'oauth2'
-			name: 'bnet',	// Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
+			type: 'oauth2',		// Either 'oauth' or 'oauth2'
+			name: 'bnet',		// Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
 			oauth: {
 				requestTokenURL: '',
 				accessTokenURL: '',
@@ -43,9 +43,11 @@
 				clientID: process.env.BNET_ID,
 				clientSecret: process.env.BNET_SECRET
 			},
-			userRoutes: ['https://us.api.battle.net/account/user/id',
-			             'https://us.api.battle.net/account/user/battletag',
-		                     'https://us.api.battle.net/wow/user/characters'] // This is the address to your app's "user profile" API endpoint (expects JSON)
+
+			// This is the address to your app's "user profile" API endpoint (expects JSON)
+			userIdRoute: 'https://us.api.battle.net/account/user/id',
+			userBattletagRoute: 'https://us.api.battle.net/account/user/battletag',
+			userCharactersRoute: 'https://us.api.battle.net/wow/user/characters'
 		}),
 		configOk = false,
 		OAuth = {}, passportOAuth, opts;
@@ -91,19 +93,44 @@
 				opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback';
 
 				passportOAuth.Strategy.prototype.userProfile = function(accessToken, done) {
-					this._oauth2.get(constants.userRoute, accessToken, function(err, body, res) {
-						if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)); }
+					var _this = this;
+					return _this._oauth2.get(constants.userIdRoute, accessToken, function(err, body, res) {
+						if (err) { return done(new InternalOAuthError('failed to fetch user id', err)); }
 
+						var idJson = {};
 						try {
-							var json = JSON.parse(body);
-							OAuth.parseUserReturn(json, function(err, profile) {
-								if (err) return done(err);
-								profile.provider = constants.name;
-								done(null, profile);
-							});
+							idJson = JSON.parse(body);
 						} catch(e) {
-							done(e);
+							return done(e);
 						}
+
+						return _this._oauth2.get(constants.userBattletagRoute, accessToken, function(err, body, res) {
+							if (err) { return done(new InternalOAuthError('failed to fetch user battletag', err)); }
+
+							var battletagJson = {};
+							try {
+								battletagJson = JSON.parse(body);
+							} catch(e) {
+								return done(e);
+							}
+
+							return _this._oauth2.get(constants.userCharactersRoute, accessToken, function(err, body, res) {
+								if (err) { return done(new InternalOAuthError('failed to fetch user battletag', err)); }
+
+								var charactersJson = {};
+								try {
+									charactersJson = JSON.parse(body);
+								} catch(e) {
+									return done(e);
+								}
+
+								return OAuth.parseUserReturn(idJson, battletagJson, charactersJson, function(err, profile) {
+									if (err) return done(err);
+									profile.provider = constants.name;
+									return done(null, profile);
+								});
+							});
+						});
 					});
 				};
 			}
@@ -136,7 +163,7 @@
 		}
 	};
 
-	OAuth.parseUserReturn = function(data, callback) {
+	OAuth.parseUserReturn = function(idJson, battletagJson, charactersJson, callback) {
 		// Alter this section to include whatever data is necessary
 		// NodeBB *requires* the following: id, displayName, emails.
 		// Everything else is optional.
@@ -145,18 +172,14 @@
 		// console.log(data);
 
 		var profile = {};
-		profile.id = data.id;
-		profile.displayName = data.name;
+		profile.id = idJson.id;
+		profile.displayName = battletagJson.battletag;
 
 		// Do you want to automatically make somebody an admin? This line might help you do that...
-		// profile.isAdmin = data.isAdmin ? true : false;
-
-		// Delete or comment out the next TWO (2) lines when you are ready to proceed
-		process.stdout.write('===\nAt this point, you\'ll need to customise the above section to id, displayName, and emails into the "profile" object.\n===');
-		return callback(new Error('Congrats! So far so good -- please see server log for details'));
+		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
 
 		callback(null, profile);
-	}
+	};
 
 	OAuth.login = function(payload, callback) {
 		OAuth.getUidByOAuthid(payload.oAuthid, function(err, uid) {
