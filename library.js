@@ -174,6 +174,13 @@
 		var profile = {};
 		profile.id = idJson.id;
 		profile.displayName = battletagJson.battletag;
+		profile.isGuild = false;
+
+		charactersJson.characters.forEach(function(character) {
+			if ((character.guild + ':' + character.guildRealm) === process.env.BNET_GUILD) {
+				profile.isGuild = true;
+			}
+		});
 
 		// Do you want to automatically make somebody an admin? This line might help you do that...
 		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
@@ -201,6 +208,12 @@
 
 					if (payload.isAdmin) {
 						Groups.join('administrators', uid, function(err) {
+							callback(null, {
+								uid: uid
+							});
+						});
+					} else if (payload.isGuild) {
+						Groups.join('guild', uid, function(err) {
 							callback(null, {
 								uid: uid
 							});
