@@ -43,6 +43,7 @@
 				clientID: process.env.BNET_ID,
 				clientSecret: process.env.BNET_SECRET
 			},
+			scope: 'wow.profile',
 
 			// This is the address to your app's "user profile" API endpoint (expects JSON)
 			userIdRoute: 'https://us.api.battle.net/account/user/id',
