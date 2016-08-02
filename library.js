@@ -38,20 +38,23 @@
 				consumerSecret: ''
 			},
 			oauth2: {
-				authorizationURL: 'https://us.battle.net/oauth/authorize',
-				tokenURL: 'https://us.battle.net/oauth/token',
+				authorizationURL: 'https://' + process.env.BNET_LOCATION + '.battle.net/oauth/authorize',
+				tokenURL: 'https://' + process.env.BNET_LOCATION + '.battle.net/oauth/token',
 				clientID: process.env.BNET_ID,
 				clientSecret: process.env.BNET_SECRET
 			},
 			scope: 'wow.profile',
+            location: process.env.BNET_LOCATION,
 
 			// This is the address to your app's "user profile" API endpoint (expects JSON)
-			userIdRoute: 'https://us.api.battle.net/account/user/id',
-			userBattletagRoute: 'https://us.api.battle.net/account/user/battletag',
-			userCharactersRoute: 'https://us.api.battle.net/wow/user/characters'
+			userIdRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/account/user/id',
+			userBattletagRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/account/user/battletag',
+			userCharactersRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/wow/user/characters'
 		}),
 		configOk = false,
 		OAuth = {}, passportOAuth, opts;
+
+        process.stdout.write('===\n'+process.env.BNET_ID + '\n' + process.env.BNET_SECRET)
 
 	if (!constants.name) {
 		winston.error('[sso-oauth] Please specify a name for your OAuth provider (library.js:32)');
