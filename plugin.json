@@ -5,7 +5,8 @@
 	"url": "https://github.com/kelsin/nodebb-plugin-sso-bnet",
 	"library": "./library.js",
 	"hooks": [
-		{ "hook": "filter:user.delete", "method": "deleteUserData" },
+		{ "hook": "static:user.delete", "method": "deleteUserData" },
+		{ "hook": "action:user.delete", "method": "deleteUserData" },
 		{ "hook": "filter:auth.init", "method": "getStrategy" }
 	]
 }

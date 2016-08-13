@@ -75,7 +75,7 @@
 
 				passportOAuth.Strategy.prototype.userProfile = function(token, secret, params, done) {
 					this._oauth.get(constants.userRoute, token, secret, function(err, body, res) {
-						if (err) { return done(new InternalOAuthError('failed to fetch user profile', err)); }
+						if (err) { return done(new Error('failed to fetch user profile', err)); }
 
 						try {
 							var json = JSON.parse(body);
@@ -93,11 +93,12 @@
 				// OAuth 2 options
 				opts = constants.oauth2;
 				opts.callbackURL = nconf.get('url') + '/auth/' + constants.name + '/callback';
-
+                var userAccessToken;
 				passportOAuth.Strategy.prototype.userProfile = function(accessToken, done) {
 					var _this = this;
+                    userAccessToken = accessToken;
 					return _this._oauth2.get(constants.userIdRoute, accessToken, function(err, body, res) {
-						if (err) { return done(new InternalOAuthError('failed to fetch user id', err)); }
+						if (err) { return done(new Error('failed to fetch user id', err)); }
 
 						var idJson = {};
 						try {
@@ -107,7 +108,7 @@
 						}
 
 						return _this._oauth2.get(constants.userBattletagRoute, accessToken, function(err, body, res) {
-							if (err) { return done(new InternalOAuthError('failed to fetch user battletag', err)); }
+							if (err) { return done(new Error('failed to fetch user battletag', err)); }
 
 							var battletagJson = {};
 							try {
@@ -117,7 +118,7 @@
 							}
 
 							return _this._oauth2.get(constants.userCharactersRoute, accessToken, function(err, body, res) {
-								if (err) { return done(new InternalOAuthError('failed to fetch user battletag', err)); }
+								if (err) { return done(new Error('failed to fetch user characters', err)); }
 
 								var charactersJson = {};
 								try {
@@ -140,9 +141,13 @@
 			passport.use(constants.name, new passportOAuth(opts, function(token, secret, profile, done) {
 				OAuth.login({
 					oAuthid: profile.id,
+                    email: '',
 					handle: profile.displayName,
-					email: profile.emails[0].value,
-					isAdmin: profile.isAdmin
+					isAdmin: profile.isAdmin,
+                    bnetData: {
+                        accessToken: userAccessToken,
+                        characters: profile.characters
+                    }
 				}, function(err, user) {
 					if (err) {
 						return done(err);
@@ -175,7 +180,7 @@
 
 		var profile = {};
 		profile.id = idJson.id;
-		profile.displayName = battletagJson.battletag;
+		profile.displayName = battletagJson.battletag.replace('#', '-');
 		profile.isGuild = false;
 
 		charactersJson.characters.forEach(function(character) {
@@ -186,6 +191,7 @@
 
 		// Do you want to automatically make somebody an admin? This line might help you do that...
 		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
+        profile.characters = charactersJson.characters.filter(function(c) {return c.level >= 10;});
 
 		callback(null, profile);
 	};
@@ -227,26 +233,17 @@
 					}
 				};
 
-				User.getUidByEmail(payload.email, function(err, uid) {
-					if(err) {
-						return callback(err);
-					}
+                User.create({
+                    username: payload.handle,
+                    bnetData: payload.bnetData,
+                    email: ''
+                }, function(err, uid) {
+                    if(err) {
+                        return callback(err);
+                    }
 
-					if (!uid) {
-						User.create({
-							username: payload.handle,
-							email: payload.email
-						}, function(err, uid) {
-							if(err) {
-								return callback(err);
-							}
-
-							success(uid);
-						});
-					} else {
-						success(uid); // Existing account -- merge
-					}
-				});
+                    success(uid);
+                });
 			}
 		});
 	};
@@ -262,7 +259,7 @@
 
 	OAuth.deleteUserData = function(uid, callback) {
 		async.waterfall([
-			async.apply(User.getUserField, uid, constants.name + 'Id'),
+			async.apply(User.getUserField, uid.uid, constants.name + 'Id'),
 			function(oAuthIdToDelete, next) {
 				db.deleteObjectField(constants.name + 'Id:uid', oAuthIdToDelete, next);
 			}
