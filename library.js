@@ -182,12 +182,15 @@
 		profile.id = idJson.id;
 		profile.displayName = battletagJson.battletag.replace('#', '-');
 		profile.isGuild = false;
-
+		
 		charactersJson.characters.forEach(function(character) {
-			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
-				profile.isGuild = true;
-				return;
-			}
+		    if (character.guild !== undefined) {
+		        winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' process.env.BNET_GUILD.toLowerCase());
+    			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
+    				profile.isGuild = true;
+    				return;
+    			}
+		    }
 		});
 
 		// Do you want to automatically make somebody an admin? This line might help you do that...
