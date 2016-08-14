@@ -185,7 +185,7 @@
 		if (charactersJson.characters) {
 		    profile.characters = charactersJson.characters.filter((c) => {
                 return (c.guildRealm + ':' + c.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()
-            }));
+            });
 		}
 		
 		if (profile.characters && profile.characters.length > 0) {
