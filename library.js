@@ -184,7 +184,7 @@
 		profile.isGuild = false;
 
 		charactersJson.characters.forEach(function(character) {
-			if ((character.guild + ':' + character.guildRealm) === process.env.BNET_GUILD) {
+			if ((character.guildRealm + ':' + character.guild) === process.env.BNET_GUILD) {
 				profile.isGuild = true;
 			}
 		});
