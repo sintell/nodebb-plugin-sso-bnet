@@ -185,7 +185,7 @@
 		
 		charactersJson.characters.forEach(function(character) {
 		    if (character.guild !== undefined) {
-		        winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' process.env.BNET_GUILD.toLowerCase());
+		        winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' + process.env.BNET_GUILD.toLowerCase());
     			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
     				profile.isGuild = true;
     				return;
