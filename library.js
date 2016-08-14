@@ -144,6 +144,7 @@
         			email: '',
 					handle: profile.displayName,
 					isAdmin: profile.isAdmin,
+					isGuild: profile.isGuild,
 					bnetData: {
                    	    accessToken: userAccessToken,
 	                    characters: profile.characters
@@ -186,7 +187,6 @@
 		charactersJson.characters.forEach(function(character) {
 		    if (character.guild !== undefined) {
     			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
-    				winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' + process.env.BNET_GUILD.toLowerCase());
     				profile.isGuild = true;
     			}
 		    }
@@ -216,8 +216,6 @@
 					// Save provider-specific information to the user
 					User.setUserField(uid, constants.name + 'Id', payload.oAuthid);
 					db.setObjectField(constants.name + 'Id:uid', payload.oAuthid, uid);
-					
-					winston.info(JSON.stringify(payload));
 
 					if (payload.isAdmin) {
 						Groups.join('administrators', uid, function(err) {
@@ -226,12 +224,11 @@
 							});
 						});
 					} else if (payload.isGuild) {
-					    winston.info('Joining "Snails" for ' + payload.displayName);
 						Groups.join('Snails', uid, function(err) {
 							if (err != null) {
 								winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
 							}
-							winston.info('Joined "Snails" for ' + payload.displayName);
+							winston.info('Invite to "Snails" for ' + payload.displayName);
 							callback(null, {
 								uid: uid
 							});
