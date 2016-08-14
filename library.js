@@ -184,6 +184,7 @@
 		profile.isGuild = false;
 
 		charactersJson.characters.forEach(function(character) {
+			winston.info(character.guildRealm + ':' + character.guild + ' -- ' + process.env.BNET_GUILD)
 			if ((character.guildRealm + ':' + character.guild) === process.env.BNET_GUILD) {
 				profile.isGuild = true;
 			}
@@ -222,6 +223,9 @@
 						});
 					} else if (payload.isGuild) {
 						Groups.join('Snails', uid, function(err) {
+							if (err != null) {
+								winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
+							}
 							callback(null, {
 								uid: uid
 							});
