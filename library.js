@@ -207,6 +207,23 @@
 
 			if (uid !== null) {
 				// Existing User
+				if (payload.isAdmin) {
+					Groups.join('administrators', uid, function(err) {
+						callback(null, {
+							uid: uid
+						});
+					});
+				} else if (payload.isGuild) {
+					Groups.join('Snails', uid, function(err) {
+						if (err != null) {
+							winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
+						}
+						winston.info('Invite to "Snails" for ' + payload.displayName);
+						callback(null, {
+							uid: uid
+						});
+					});
+				}
 				callback(null, {
 					uid: uid
 				});
