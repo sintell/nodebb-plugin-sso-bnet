@@ -247,10 +247,10 @@
                     if(err) {
                         return callback(err);
                     }
-
+                
                     success(uid);
                 });
-			}
+            }
 		});
 	};
 
