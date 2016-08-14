@@ -141,13 +141,13 @@
 			passport.use(constants.name, new passportOAuth(opts, function(token, secret, profile, done) {
 				OAuth.login({
 					oAuthid: profile.id,
-                    email: '',
+        			email: '',
 					handle: profile.displayName,
 					isAdmin: profile.isAdmin,
-                    bnetData: {
-                        accessToken: userAccessToken,
-                        characters: profile.characters
-                    }
+					bnetData: {
+                   	    accessToken: userAccessToken,
+	                    characters: profile.characters
+	                }
 				}, function(err, user) {
 					if (err) {
 						return done(err);
@@ -160,7 +160,7 @@
 				name: constants.name,
 				url: '/auth/' + constants.name,
 				callbackURL: '/auth/' + constants.name + '/callback',
-				icon: 'fa-check-square',
+				icon: 'fa-sign-in',
 				scope: (constants.scope || '').split(',')
 			});
 
@@ -221,7 +221,7 @@
 							});
 						});
 					} else if (payload.isGuild) {
-						Groups.join('guild', uid, function(err) {
+						Groups.join('Snails', uid, function(err) {
 							callback(null, {
 								uid: uid
 							});
