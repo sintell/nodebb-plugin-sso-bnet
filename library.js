@@ -178,23 +178,29 @@
 
 		// Find out what is available by uncommenting this line:
 		// console.log(data);
-
+                
 		var profile = {};
 		profile.id = idJson.id;
-		profile.displayName = battletagJson.battletag.replace('#', '-');
-		profile.isGuild = false;
 		
-		charactersJson.characters.forEach(function(character) {
-		    if (character.guild !== undefined) {
-    			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
-    				profile.isGuild = true;
-    			}
-		    }
-		});
+		if (charactersJson.characters) {
+		    profile.characters = charactersJson.characters.filter((c) => {
+                return (c.guildRealm + ':' + c.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()
+            }));
+		}
+		
+		if (profile.characters && profile.characters.length > 0) {
+    		profile.isGuild = true;
+    		profile.characters.sort((a, b) => {
+    		    return a.lastModified > b.lastModified ? -1 : 1;
+    		});
+    		
+    		profile.displayName = profile.characters[0].name;
+		} else {
+		   profile.displayName = battletagJson.battletag.replace('#', '-'); 
+		}
 
 		// Do you want to automatically make somebody an admin? This line might help you do that...
 		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
-        profile.characters = charactersJson.characters.filter(function(c) {return c.level >= 10;});
 
 		callback(null, profile);
 	};
@@ -223,10 +229,12 @@
 							uid: uid
 						});
 					});
+				} else {
+					callback(null, {
+						uid: uid
+					});	
 				}
-				callback(null, {
-					uid: uid
-				});
+				
 			} else {
 				// New User
 				var success = function(uid) {
