@@ -185,10 +185,9 @@
 		
 		charactersJson.characters.forEach(function(character) {
 		    if (character.guild !== undefined) {
-		        winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' + process.env.BNET_GUILD.toLowerCase());
     			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
+    				winston.info((character.guildRealm + ':' + character.guild).toLowerCase() + ' --- ' + process.env.BNET_GUILD.toLowerCase());
     				profile.isGuild = true;
-    				return;
     			}
 		    }
 		});
@@ -217,6 +216,8 @@
 					// Save provider-specific information to the user
 					User.setUserField(uid, constants.name + 'Id', payload.oAuthid);
 					db.setObjectField(constants.name + 'Id:uid', payload.oAuthid, uid);
+					
+					winston.info(JSON.stringify(payload));
 
 					if (payload.isAdmin) {
 						Groups.join('administrators', uid, function(err) {
