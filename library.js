@@ -184,9 +184,9 @@
 		profile.isGuild = false;
 
 		charactersJson.characters.forEach(function(character) {
-			winston.info(character.guildRealm + ':' + character.guild + ' -- ' + process.env.BNET_GUILD)
 			if ((character.guildRealm + ':' + character.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()) {
 				profile.isGuild = true;
+				return;
 			}
 		});
 
@@ -222,10 +222,12 @@
 							});
 						});
 					} else if (payload.isGuild) {
+					    winston.info('Joining "Snails" for ' + payload.displayName);
 						Groups.join('Snails', uid, function(err) {
 							if (err != null) {
 								winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
 							}
+							winston.info('Joined "Snails" for ' + payload.displayName);
 							callback(null, {
 								uid: uid
 							});
