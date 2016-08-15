@@ -212,6 +212,8 @@
 
 			if (uid !== null) {
 				// Existing User
+	            User.setUserField(uid, 'bnetData', payload.bnetData);
+
 				if (payload.isAdmin) {
 					Groups.join('administrators', uid, function(err) {
 						callback(null, {
@@ -233,7 +235,6 @@
 						uid: uid
 					});
 				}
-
 			} else {
 				// New User
 				var success = function(uid) {
