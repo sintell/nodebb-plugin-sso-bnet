@@ -6,7 +6,6 @@
 	"library": "./library.js",
 	"hooks": [
 		{ "hook": "static:user.delete", "method": "deleteUserData" },
-		{ "hook": "action:user.delete", "method": "deleteUserData" },
 		{ "hook": "filter:auth.init", "method": "getStrategy" }
 	]
 }
