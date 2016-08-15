@@ -27,7 +27,6 @@
 		nconf = module.parent.require('nconf'),
 		winston = module.parent.require('winston'),
 		async = module.parent.require('async'),
-
 		constants = Object.freeze({
 			type: 'oauth2',		// Either 'oauth' or 'oauth2'
 			name: 'bnet',		// Something unique to your OAuth provider in lowercase, like "github", or "nodebb"
@@ -147,6 +146,7 @@
 					handle: profile.displayName,
 					isAdmin: profile.isAdmin,
 					isGuild: profile.isGuild,
+                    availableNicknames: profile.availableNicknames,
 					bnetData: {
                    	    accessToken: userAccessToken,
 	                    characters: profile.characters
@@ -183,16 +183,16 @@
 
 		var profile = {};
 		profile.id = idJson.id;
-        guild.composeUserCharacters(charactersJson.characters, function(err, characters) {
+        guild.composeUserCharacters(charactersJson.characters, function(err, characters, nicks) {
             if (err) {
                 winston.error(err);
                 callback(err);
             }
             profile.characters = characters;
 
-            if (profile.characters && profile.characters.length > 0) {
+            if (nicks.length > 0) {
         		profile.isGuild = true;
-        		profile.displayName = profile.characters[0].name;
+                profile.availableNicknames = nicks;
     		} else {
     		   profile.displayName = battletagJson.battletag.replace('#', '-');
     		}
@@ -206,35 +206,37 @@
 
 	OAuth.login = function(payload, callback) {
 		OAuth.getUidByOAuthid(payload.oAuthid, function(err, uid) {
-			if(err) {
+			if (err) {
 				return callback(err);
 			}
 
 			if (uid !== null) {
 				// Existing User
-	            User.setUserField(uid, 'bnetData', payload.bnetData);
-
-				if (payload.isAdmin) {
-					Groups.join('administrators', uid, function(err) {
-						callback(null, {
-							uid: uid
-						});
-					});
-				} else if (payload.isGuild) {
-					Groups.join('Snails', uid, function(err) {
-						if (err != null) {
-							winston.error('Error joining "Snails" group for ' + payload.handle + ': ' + err);
-						}
-						winston.info('Invite to "Snails" for ' + payload.handle);
-						callback(null, {
-							uid: uid
-						});
-					});
-				} else {
-					callback(null, {
-						uid: uid
-					});
-				}
+                async.waterfall([
+                    async.apply(User.setUserField, uid, 'bnetData', payload.bnetData),
+                    function(next) {
+                        User.getUserField(uid, 'username', function(err, username) {
+                            // If nick is in available ones then check if it is set to main char
+                            if (payload.availableNicknames.indexOf(username) !== -1) {
+                                guild.setMainCharacter(uid, username, next);
+                            }
+                            // Else set default nick
+                            User.updateProfile(uid, {username: payload.handle}, next);
+                        });
+                    }
+                ], () => {
+                    if (payload.isGuild) {
+                        Groups.join('Snails', uid, function(err) {
+                            callback(null, {
+                                uid: uid
+                            });
+                        });
+                    } else {
+                        callback(null, {
+                            uid: uid
+                        });
+                    }
+                });
 			} else {
 				// New User
 				var success = function(uid) {
@@ -242,13 +244,7 @@
 					User.setUserField(uid, constants.name + 'Id', payload.oAuthid);
 					db.setObjectField(constants.name + 'Id:uid', payload.oAuthid, uid);
 
-					if (payload.isAdmin) {
-						Groups.join('administrators', uid, function(err) {
-							callback(null, {
-								uid: uid
-							});
-						});
-					} else if (payload.isGuild) {
+					if (payload.isGuild) {
 						Groups.join('Snails', uid, function(err) {
 							if (err != null) {
 								winston.error('Error joining "Snails" group for ' + payload.handle + ': ' + err);
