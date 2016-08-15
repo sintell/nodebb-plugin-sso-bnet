@@ -20,6 +20,7 @@
 		Groups = module.parent.require('./groups'),
 		meta = module.parent.require('./meta'),
 		db = module.parent.require('../src/database'),
+		guild = module.parent.require('../src/guild/guild'),
 		passport = module.parent.require('passport'),
 		fs = module.parent.require('fs'),
 		path = module.parent.require('path'),
@@ -49,7 +50,8 @@
 			// This is the address to your app's "user profile" API endpoint (expects JSON)
 			userIdRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/account/user/id',
 			userBattletagRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/account/user/battletag',
-			userCharactersRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/wow/user/characters'
+			userCharactersRoute: 'https://' + process.env.BNET_LOCATION + '.api.battle.net/wow/user/characters?locale=' +
+                process.env.BNET_LOCALE
 		}),
 		configOk = false,
 		OAuth = {}, passportOAuth, opts;
@@ -178,31 +180,28 @@
 
 		// Find out what is available by uncommenting this line:
 		// console.log(data);
-                
+
 		var profile = {};
 		profile.id = idJson.id;
-		
-		if (charactersJson.characters) {
-		    profile.characters = charactersJson.characters.filter((c) => {
-                return (c.guildRealm + ':' + c.guild).toLowerCase() === process.env.BNET_GUILD.toLowerCase()
-            });
-		}
-		
-		if (profile.characters && profile.characters.length > 0) {
-    		profile.isGuild = true;
-    		profile.characters.sort((a, b) => {
-    		    return a.lastModified > b.lastModified ? -1 : 1;
-    		});
-    		
-    		profile.displayName = profile.characters[0].name;
-		} else {
-		   profile.displayName = battletagJson.battletag.replace('#', '-'); 
-		}
+        guild.composeUserCharacters(charactersJson.characters, function(err, characters) {
+            if (err) {
+                winston.error(err);
+                callback(err);
+            }
+            profile.characters = characters;
 
-		// Do you want to automatically make somebody an admin? This line might help you do that...
-		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
+            if (profile.characters && profile.characters.length > 0) {
+        		profile.isGuild = true;
+        		profile.displayName = profile.characters[0].name;
+    		} else {
+    		   profile.displayName = battletagJson.battletag.replace('#', '-');
+    		}
 
-		callback(null, profile);
+    		// Do you want to automatically make somebody an admin? This line might help you do that...
+    		profile.isAdmin = (profile.id == process.env.ADMIN_ID);
+
+    		callback(null, profile);
+        });
 	};
 
 	OAuth.login = function(payload, callback) {
@@ -222,9 +221,9 @@
 				} else if (payload.isGuild) {
 					Groups.join('Snails', uid, function(err) {
 						if (err != null) {
-							winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
+							winston.error('Error joining "Snails" group for ' + payload.handle + ': ' + err);
 						}
-						winston.info('Invite to "Snails" for ' + payload.displayName);
+						winston.info('Invite to "Snails" for ' + payload.handle);
 						callback(null, {
 							uid: uid
 						});
@@ -232,9 +231,9 @@
 				} else {
 					callback(null, {
 						uid: uid
-					});	
+					});
 				}
-				
+
 			} else {
 				// New User
 				var success = function(uid) {
@@ -251,9 +250,9 @@
 					} else if (payload.isGuild) {
 						Groups.join('Snails', uid, function(err) {
 							if (err != null) {
-								winston.error('Error joining "Snails" group for ' + payload.displayName + ': ' + err);
+								winston.error('Error joining "Snails" group for ' + payload.handle + ': ' + err);
 							}
-							winston.info('Invite to "Snails" for ' + payload.displayName);
+							winston.info('Invite to "Snails" for ' + payload.handle);
 							callback(null, {
 								uid: uid
 							});
@@ -273,7 +272,7 @@
                     if(err) {
                         return callback(err);
                     }
-                
+
                     success(uid);
                 });
             }
