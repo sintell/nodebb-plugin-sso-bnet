@@ -193,6 +193,7 @@
             if (nicks.length > 0) {
         		profile.isGuild = true;
                 profile.availableNicknames = nicks;
+                profile.displayName = nicks[0];
     		} else {
     		   profile.displayName = battletagJson.battletag.replace('#', '-');
     		}
